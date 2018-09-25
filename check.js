@@ -1,11 +1,12 @@
 const KJUR = require('jsrsasign');
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const env = require('node-env-file');
 
 env('./.env');
 
-const { JWT_SECRET, JWT_ISSUER, PORT } = process.env;
+const { JWT_SECRET, JWT_ISSUER, PORT, COOKIE_NAME } = process.env;
 const app = express();
 const default_port = 9050;
 let port = default_port;
@@ -24,6 +25,12 @@ if (PORT != undefined) {
 	console.warn(`Invalid PORT provided in environment file: ${PORT} defaulting to ${default_port}`);
 }
 
+if (COOKIE_NAME == undefined || COOKIE_NAME == '') {
+	console.warn(`Invalid COOKIE_NAME provided in environment file`);
+}
+
+app.use(cookieParser());
+
 app.use(morgan(
 	':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status ":referrer" ":user-agent" Authorization: ":req[authorization]"', 
 	{skip: (req, res) => res.statusCode < 400 })
@@ -31,23 +38,9 @@ app.use(morgan(
 
 app.use((request, response) => {
 
-	let token_header = request.get('Authorization');
+	let token = request.cookies[COOKIE_NAME];
 
-	let token_pieces = [];
-
-	if (token_header !== undefined){
-		token_pieces = token_header.split(' ');
-	}
-
-	let token = '';
-
-	if (Array.isArray(token_pieces) && token_pieces[0] === 'Bearer' && typeof token_pieces[1] === "string" ) {
-		token = token_pieces[1];
-	}
-
-	let is_valid = false;
-
-	if (token === '') {
+	if (token === '' || token === undefined) {
 		return response.status(403).send();
 	}
 

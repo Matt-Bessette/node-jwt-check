@@ -4,6 +4,7 @@
   "description": "Verifys the JWT in nginx before proxying traffic to x server",
   "main": "check.js",
   "dependencies": {
+    "cookie-parser": "1.4.3",
     "express": "4.16.3",
     "jsrsasign": "8.0.12",
     "morgan": "1.9.1",
